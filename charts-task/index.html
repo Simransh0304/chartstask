@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightweight Charts Task</title>
+    <script src="./lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chart-container {
+            width: 80%;
+            height: 400px;
+            margin: auto;
+        }
+        #controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:disabled {
+            background-color: #d3d3d3;
+        }
+        #profit-loss {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body onload="loadCharts()">
+    <div id="chart-container"></div>
+    <div id="controls">
+        <button class="button" id="up-button" onclick="addLine('up')">Up</button>
+        <button class="button" id="down-button" onclick="addLine('down')">Down</button>
+    </div>
+    <div id="profit-loss">Profit/Loss: $0</div>
+
+    <script>
+        let chart, lineSeries, horizontalLine, horizontalLinePrice, initialValue = 48500, currentValue = 48500, direction = 'up';
+
+        function loadCharts() {
+            console.log('charts..');
+            const chartOptions = {
+                layout: {
+                    textColor: 'black',
+                    background: { type: 'solid', color: 'white' }
+                },
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: true
+                }
+            };
+            chart = LightweightCharts.createChart(document.getElementById('chart-container'), chartOptions);
+            lineSeries = chart.addLineSeries({ color: '#2962FF' });
+
+            const data = [{ value: initialValue, time: Math.floor(Date.now() / 1000) }];
+            lineSeries.setData(data);
+
+            setInterval(updateChart, 1000);
+        }
+
+        function addLine(upOrDown) {
+            const currentTime = Math.floor(Date.now() / 1000);
+            horizontalLinePrice = currentValue;
+
+            if (horizontalLine) {
+                chart.removeSeries(horizontalLine);
+            }
+
+            horizontalLine = chart.addLineSeries({
+                color: '#FF0000',
+                lineWidth: 1,
+                priceLineVisible: false
+            });
+            horizontalLine.setData([{ time: currentTime, value: horizontalLinePrice }, { time: currentTime + 10, value: horizontalLinePrice }]);
+
+            direction = upOrDown;
+        }
+
+        function updateChart() {
+            const time = Math.floor(Date.now() / 1000);
+            const valueChange = Math.floor(Math.random() * 10) - 5; // Random change between -5 and 4
+            currentValue += valueChange;
+            lineSeries.update({ time, value: currentValue });
+
+            updateGraphColor();
+            updateProfitLoss();
+        }
+
+        function updateGraphColor() {
+    if (!horizontalLine || horizontalLinePrice === undefined) return;
+
+    // Ensure horizontalLine._internalData is defined
+    if (!horizontalLine._internalData) return;
+
+    const firstPoint = horizontalLine._internalData.getFirstPoint();
+
+    // Ensure firstPoint is defined
+    if (!firstPoint) return;
+
+    let color;
+
+    if (direction === 'up') {
+        color = currentValue > firstPoint.value ? 'green' : 'red';
+    } else {
+        color = currentValue < firstPoint.value ? 'green' : 'red';
+    }
+
+    lineSeries.applyOptions({ color });
+}
+
+
+
+        function updateProfitLoss() {
+            if (horizontalLinePrice === undefined) return;
+
+            const profitLoss = currentValue - horizontalLinePrice;
+            document.getElementById('profit-loss').innerText = `Profit/Loss: $${profitLoss}`;
+        }
+    </script>
+</body>
+</html>
+
